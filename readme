@@ -1,0 +1,4 @@
+build:
+docker build -t warpforvps:v1  ./
+run:
+docker run -d --name warp --network host -e myip="104.28.245.199" warpforvps:v1
