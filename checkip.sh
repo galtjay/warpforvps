@@ -13,8 +13,8 @@ do
   else
     echo "Start to change ip address" >> /var/log/warp.log
     warp-cli disconnect
-	sleep 3
-	warp-cli connect
-	sleep 5
+    sleep 3
+    warp-cli connect
+    sleep 5
   fi
 done
