@@ -12,9 +12,9 @@ do
     sleep 600
   else
     echo "Start to change ip address" >> /var/log/warp.log
-    warp-cli disconnect
-    sleep 3
-    warp-cli connect
-    sleep 5
+    warp-cli --accept-tos disconnect
+    sleep 10
+    warp-cli --accept-tos connect
+    sleep 10
   fi
 done
