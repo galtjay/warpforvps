@@ -1,7 +1,17 @@
 build:
-docker build -t warpforvps:v1  ./
+docker build -t warp:v2  ./
 run:
-docker run -d --name warp --network host -e myip="104.28.245.199" warpforvps:v1
+docker run -d --name warp --network host -e myip="104.28.245.199,104.28.222.43" warp:v2
+compose:
+warp:
+image: warp:v2
+container_name: warp
+network_mode: host
+environment:
+	myip: "104.28.245.199,104.28.222.43"
+
+
+myip is the ips you want to exclude.
 
 more info:
 https://watermelonwater.tech/?p=423
