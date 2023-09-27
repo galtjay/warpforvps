@@ -2,7 +2,7 @@
 IFS=',' read -r -a ips_array <<< "$myip"
 sleep 5
 while true
-ipnow=`export ALL_PROXY=socks5://127.0.0.1:40000 && curl myip.ipip.net | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b'`
+ipnow=`export ALL_PROXY=socks5://127.0.0.1:40000 && curl https://chat.openai.com/cdn-cgi/trace | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b'`
 echo "current ip is "$ipnow "excluded ip is" $myip >> /var/log/warp.log
 do
 
@@ -23,9 +23,9 @@ do
   else
     echo "Start to change ip address" >> /var/log/warp.log
     warp-cli --accept-tos disconnect
-    sleep 10
+    sleep 3
     warp-cli --accept-tos connect
-    sleep 10
+    sleep 1
 
   fi
   fi
