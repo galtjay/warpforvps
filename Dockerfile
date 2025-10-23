@@ -1,5 +1,5 @@
 FROM ubuntu:22.10
-LABEL mantainer="galtjay<galtjay@foxmail.com>"
+LABEL mantainer="galtjay<galtjay1991@gmail.com>"
 #下边这一行主要是完成supervisor和cloudflare-warp的安装
 RUN apt update && apt install -y curl gpg supervisor && curl https://pkg.cloudflareclient.com/pubkey.gpg |  gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ jammy main" |  tee /etc/apt/sources.list.d/cloudflare-client.list && apt update && apt install cloudflare-warp -y &&  apt-get clean
 #生成supervisor守护配置文件，原本的warp-svc基于systemd进行管理，docker内部不太好实现，切换成supervisor进行守护。
