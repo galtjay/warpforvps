@@ -11,3 +11,5 @@ network_mode: host
 more info:
 https://watermelonwater.tech/archives/%E8%A7%A3%E5%86%B3vps%20docker%E8%AE%BF%E9%97%AEchatgpt%E6%97%B61020%E6%88%96429%E9%94%99%E8%AF%AF%E7%9A%84%E7%BB%88%E6%9E%81%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E7%AA%81%E7%A0%B4openai%E9%99%90%E6%B5%81
 
+how to test:
+curl --proxy http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
