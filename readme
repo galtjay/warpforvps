@@ -1,15 +1,74 @@
-build:
-docker build -t warp:v4  ./
-run:
-docker run -d --name warp --network host  warp:v4
-compose:
-warp:
-image: warp:v4
-container_name: warp
-network_mode: host
+# warpforvps
 
-more info:
-https://watermelonwater.tech/archives/%E8%A7%A3%E5%86%B3vps%20docker%E8%AE%BF%E9%97%AEchatgpt%E6%97%B61020%E6%88%96429%E9%94%99%E8%AF%AF%E7%9A%84%E7%BB%88%E6%9E%81%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E7%AA%81%E7%A0%B4openai%E9%99%90%E6%B5%81
+在 Docker 中运行 Cloudflare WARP 客户端，暴露 SOCKS5 代理端口 `40000` 给宿主机使用。
+Run the Cloudflare WARP client in Docker and expose the SOCKS5 proxy port `40000` to the host.
 
-how to test:
+启动容器后自动完成：注册客户端（`warp-cli registration new`）→ 切换 proxy 模式 → 连接（`warp-cli connect`）→ 校验 `warp=on`。
+On startup the container automatically: registers the client (`warp-cli registration new`) → switches to proxy mode → connects (`warp-cli connect`) → verifies `warp=on`.
+
+## 参考文档 / References
+
+- WARP 包源 / WARP package repository: https://pkg.cloudflareclient.com/
+- Linux 客户端 / Linux client: https://developers.cloudflare.com/warp-client/get-started/linux/
+
+## build / 构建
+
+```bash
+docker build -t warp:20261102 ./
+```
+
+## run / 运行
+
+推荐使用 host 网络（代理只监听 127.0.0.1）。
+Host networking is recommended, because WARP's proxy only listens on 127.0.0.1.
+
+```bash
+docker run -d --name warp --network host --cap-add NET_ADMIN warp:20261102
+```
+
+如果使用桥接网络，必须让 WARP 监听宿主机可达的地址（否则 40000 端口只绑定在容器的 127.0.0.1 上）。
+If you use bridge networking, WARP must listen on an address reachable from the host, otherwise port 40000 is only bound to the container's 127.0.0.1.
+
+```bash
+docker run -d --name warp -p 40000:40000 -e WARP_PROXY_HOST=0.0.0.0 --cap-add NET_ADMIN warp:20261102
+```
+
+## compose
+
+```yaml
+services:
+  warp:
+    image: warp:20261102
+    container_name: warp
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+```
+
+## 查看日志 / 状态 · Logs & status
+
+```bash
+docker logs -f warp
+docker exec -it warp warp-cli --accept-tos status
+```
+
+## how to test / 测试
+
+```bash
+# 校验 warp=on / verify that warp=on
+curl --proxy socks5h://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
+
+# 也可以当 HTTP 代理用（warp 的 proxy 模式支持 HTTP CONNECT）
+# Can also be used as an HTTP proxy (WARP proxy mode supports HTTP CONNECT)
 curl --proxy http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
+```
+
+## 注意 / Notes
+
+- 需要放行出站 UDP `2408`（WireGuard）与 `8095`（MASQUE/QUIC），否则隧道无法建立。
+  Outbound UDP `2408` (WireGuard) and `8095` (MASQUE/QUIC) must be allowed, otherwise the tunnel cannot be established.
+- 可用环境变量 `WARP_PROXY_PORT` 覆盖默认代理端口 `40000`。
+  The default proxy port `40000` can be overridden with the `WARP_PROXY_PORT` environment variable.
+- 注册信息保存在容器内，删除容器后需重新注册（可挂载卷以持久化）。
+  Registration data is stored inside the container; recreating the container requires re-registration (mount a volume to persist it).

@@ -1,13 +1,38 @@
 FROM ubuntu:24.04
-LABEL mantainer="galtjay<galtjay1991@gmail.com>"
-#下边这一行主要是完成supervisor和cloudflare-warp的安装
-RUN apt update && apt install -y curl gpg supervisor && curl https://pkg.cloudflareclient.com/pubkey.gpg |  gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ jammy main" |  tee /etc/apt/sources.list.d/cloudflare-client.list && apt update && apt install cloudflare-warp -y &&  apt-get clean
-#生成supervisor守护配置文件，原本的warp-svc基于systemd进行管理，docker内部不太好实现，切换成supervisor进行守护。
-RUN echo "[program:warp-svc]\ncommand=/bin/bash -c /usr/bin/warp-svc\nautostart=true\nautorestart=true\nstartretries=3\nstderr_logfile=/var/log/warp.log\nstdout_logfile=/var/log/warp.log\n" > /etc/supervisor/conf.d/warp.conf
-#生成docker启动脚本，输出日志到控制台。每次启动会自动的完成注册，切换模式。
-COPY init.sh /init.sh
-RUN chmod +x /init.sh 
-#默认暴露40000端口
-EXPOSE "40000/tcp"
-CMD ["bash","-c","/init.sh"]
+LABEL maintainer="galtjay<galtjay1991@gmail.com>"
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 安装基础依赖 + Cloudflare WARP 官方仓库（参考 https://pkg.cloudflareclient.com/）
+# 注意：公钥在 2025-09-12 之后有更新，这里每次构建都重新拉取最新公钥；
+# 仓库代号使用 lsb_release -cs（Ubuntu 24.04 => noble），不再硬编码 jammy。
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      gnupg \
+      lsb-release \
+      procps \
+      supervisor \
+ && mkdir -p /usr/share/keyrings \
+ && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg \
+      | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
+ && chmod 644 /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" \
+      > /etc/apt/sources.list.d/cloudflare-client.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends cloudflare-warp \
+ && rm -rf /var/lib/apt/lists/*
+
+# warp-svc 原本由 systemd 管理，容器内改用 supervisor 守护。
+COPY warp-supervisor.conf /etc/supervisor/conf.d/warp.conf
+
+# 容器启动脚本：注册 -> 设为 proxy 模式 -> 连接 -> 校验 warp=on
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+
+# WARP proxy 模式默认监听 40000 端口，暴露给宿主机使用。
+# 用法：curl --proxy socks5://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
+EXPOSE 40000
+
+ENTRYPOINT ["/init.sh"]
