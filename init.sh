@@ -11,6 +11,17 @@ log() { echo "${LOG_PREFIX} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
 WARP_CLI=(warp-cli --accept-tos)
 # 注意：如果是非 root 用户运行，需要加上 sudo；本镜像默认以 root 运行。
 
+# 0. 启动 D-Bus 系统总线：warp-svc 用它监听电源/休眠事件。
+#    容器内没有 systemd，若不启动会每 3 秒刷一条 dbus connection failed 噪音日志。
+if command -v dbus-daemon >/dev/null 2>&1; then
+    mkdir -p /run/dbus
+    if dbus-daemon --system --fork >/dev/null 2>&1; then
+        log "dbus system bus started."
+    else
+        log "WARNING: failed to start dbus system bus (non-fatal)."
+    fi
+fi
+
 # 1. 启动 warp-svc 守护进程（supervisor 前台运行，日志输出到容器标准输出）
 log "starting warp-svc (supervisord)..."
 mkdir -p /var/log/supervisor

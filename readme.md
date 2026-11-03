@@ -71,12 +71,3 @@ curl --proxy socks5h://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
 # Can also be used as an HTTP proxy (WARP proxy mode supports HTTP CONNECT)
 curl --proxy http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace
 ```
-
-## 注意 / Notes
-
-- 需要放行出站 UDP `2408`（WireGuard）与 `8095`（MASQUE/QUIC），否则隧道无法建立。
-  Outbound UDP `2408` (WireGuard) and `8095` (MASQUE/QUIC) must be allowed, otherwise the tunnel cannot be established.
-- 可用环境变量 `WARP_PROXY_PORT` 覆盖默认代理端口 `40000`。
-  The default proxy port `40000` can be overridden with the `WARP_PROXY_PORT` environment variable.
-- 注册信息保存在容器内，删除容器后需重新注册（可挂载卷以持久化）。
-  Registration data is stored inside the container; recreating the container requires re-registration (mount a volume to persist it).
